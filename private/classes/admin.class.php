@@ -32,6 +32,10 @@ class Admin extends DatabaseObject {
    $this->hashed_password = password_hash($this->password, PASSWORD_BCRYPT);
  }
 
+ public function verify_password($password) {
+   return password_verify($password, $this->hashed_password);
+ }
+
  // TODO: Refactor so it can easily inherit from the parent class
  protected function create() {
    $this->set_hashed_password();
@@ -128,6 +132,9 @@ class Admin extends DatabaseObject {
      $this->errors[] = "Username cannot be blank.";
    } elseif (!has_length($this->username, array('min' => 8, 'max' => 255))) {
      $this->errors[] = "Username must be between 8 and 255 characters.";
+   } elseif (!has_unique_username($this->username, $this->id ?? 0)) {
+      $this->errors[] = "Username not allowed. Try another";
+
    }
  
    if ($this->password_required) {
@@ -153,6 +160,18 @@ class Admin extends DatabaseObject {
   
   }
    return $this->errors;
+ }
+
+ static public function find_by_username($username) {
+  $sql = "SELECT * FROM " . static::$table_name . " ";
+ // $sql .= "WHERE username = '" . static::$database->username . "'";
+ $sql .= "WHERE username = '" . $username . "'";
+  $object_array = static::find_by_sql($sql);
+  if(!empty($object_array)) {
+      return array_shift($object_array);
+  }   else    {
+      return false;
+  }
  }
  
 }
